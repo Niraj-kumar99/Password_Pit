@@ -7,13 +7,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use phpDocumentor\Reflection\Types\True_;
+use Yajra\DataTables\DataTables;
+
 use Validator;
 
 class PitController extends Controller
 {
     public function index()
     {
-        return view('dashboard')->with('pit_arr',Pit::where('user_id',Auth::user()->id)->get());
+        return view('listing')->with('pit_arr',Pit::where('user_id',Auth::user()->id)->get());
+    }
+
+    public function getAll(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = Pit::latest();
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function($row){
+
+                    return view('action')->with('pit', $row);
+                    /*
+                    logger($row->id);
+                    $actionBtn = '<a href="javascript:void(0)" class="edit btn btn-success btn-sm">Edit</a>
+                    <a href="{{route('delete')}}" class="delete btn btn-danger btn-sm">Delete</a>
+                    <a href="javascript:void(0)" class="showpassword btn btn-info btn-sm">Show Password</a>
+                    <a href="javascript:void(0)" class="changepassword btn btn-primary btn-sm">Change Password</a>';
+                    return $actionBtn;*/
+                })
+                ->editColumn('password','***********')
+                ->rawColumns(['action'])
+                ->make(true);
+        }
     }
 
     public function create()
@@ -51,7 +76,7 @@ class PitController extends Controller
         return view('editList')->with('pit_arr', $get_row);
     }
 
-    public function update(Request $request, Pit $pit, $id)
+    public function update(Request $request, $id)
     {
         $get_row = Pit::find($id);
         $get_row->name = $request->input('name');
@@ -65,7 +90,7 @@ class PitController extends Controller
 
     public function destroy(Pit $pit, $id)
     {
-        $get_row = Pit::destroy($id);
+        Pit::destroy($id);
         return redirect('/dashboard');
     }
 
